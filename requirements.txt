@@ -1,0 +1,18 @@
+# Packages named in notebooks/waste_classifier_vgg16.ipynb.
+# Pins match the install cell. Unpinned packages are imported by the
+# notebook or by scripts/evaluate_test.py, and the notebook does not pin them.
+# The executed kernel reports Python 3.11.3 (notebook metadata language_info)
+# and prints TensorFlow 2.17.0.
+
+tensorflow==2.17.0
+scikit-learn==1.5.1
+matplotlib==3.9.2
+
+# Unpinned: the notebook runs `pip install numpy` with no version,
+# and imports requests plus tqdm while downloading the dataset.
+numpy
+requests
+tqdm
+
+# Used by tensorflow.keras image loading in the evaluation script.
+Pillow
