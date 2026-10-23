@@ -1,0 +1,46 @@
+# Datasets and local test images.
+# Put held-out images in data/test/O and data/test/R. Do not commit them.
+data/
+o-vs-r-split/
+o-vs-r-split-reduced-1200.zip
+*.zip
+
+# Trained models and checkpoints.
+# Publish O_R_tlearn_vgg16.keras and O_R_tlearn_fine_tune_vgg16.keras
+# on a GitHub Release instead of committing them.
+*.keras
+*.h5
+*.hdf5
+checkpoints/
+**/checkpoints/
+
+# Artifacts from scripts/evaluate_test.py
+outputs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.python-version
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+Thumbs.db
