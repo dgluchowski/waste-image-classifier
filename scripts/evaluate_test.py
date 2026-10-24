@@ -2,10 +2,21 @@
 """Score a released waste-classifier model on data/test.
 
 Organic images go in data/test/O. Recyclable images go in data/test/R.
-The trained .keras files are not in git. Download one from the GitHub Release
-and pass it with --model:
+The trained .keras files are not in git. They are the two assets on the
+v1.0-models release:
 
-    python scripts/evaluate_test.py --model /path/to/O_R_tlearn_fine_tune_vgg16.keras
+    https://github.com/dgluchowski/waste-image-classifier/releases/download/v1.0-models/O_R_tlearn_vgg16.keras
+    https://github.com/dgluchowski/waste-image-classifier/releases/download/v1.0-models/O_R_tlearn_fine_tune_vgg16.keras
+
+Download one with gh and score it:
+
+    python scripts/evaluate_test.py --download O_R_tlearn_vgg16.keras
+    python scripts/evaluate_test.py --download O_R_tlearn_fine_tune_vgg16.keras
+
+Or fetch it yourself, then pass the local path:
+
+    gh release download v1.0-models --repo dgluchowski/waste-image-classifier --pattern 'O_R_tlearn_vgg16.keras'
+    python scripts/evaluate_test.py --model O_R_tlearn_vgg16.keras
 
 Preprocessing matches the notebook evaluation cell (execution count 29 in
 notebooks/waste_classifier_vgg16.ipynb): resize to 150x150, scale pixels to
@@ -20,15 +31,23 @@ It does not fill in metrics when the model file or the test images are missing.
 from __future__ import annotations
 
 import argparse
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp"}
 CLASS_NAMES = ("O", "R")
-RELEASE_NAMES = (
-    "O_R_tlearn_vgg16.keras",
-    "O_R_tlearn_fine_tune_vgg16.keras",
+RELEASE_TAG = "v1.0-models"
+RELEASE_REPO = "dgluchowski/waste-image-classifier"
+RELEASE_BASE = (
+    "https://github.com/dgluchowski/waste-image-classifier/releases/download/v1.0-models"
 )
+# Byte sizes of the two v1.0-models assets.
+RELEASE_ASSETS = {
+    "O_R_tlearn_vgg16.keras": 112455527,
+    "O_R_tlearn_fine_tune_vgg16.keras": 104061755,
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -38,9 +57,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--model",
-        required=True,
         type=Path,
-        help="Path to a released .keras model file",
+        help="Path to a .keras file already downloaded from the v1.0-models release",
+    )
+    parser.add_argument(
+        "--download",
+        choices=tuple(RELEASE_ASSETS),
+        help=(
+            "Download this v1.0-models asset into models/ with "
+            "`gh release download`, then score it"
+        ),
     )
     parser.add_argument(
         "--test-dir",
@@ -63,6 +89,79 @@ def parse_args() -> argparse.Namespace:
         help="Directory for confusion_matrix.csv and confusion_matrix.png",
     )
     return parser.parse_args()
+
+
+def asset_url(name: str) -> str:
+    return f"{RELEASE_BASE}/{name}"
+
+
+def print_release_help(stream) -> None:
+    print(
+        "The checkpoints are the v1.0-models release assets:",
+        file=stream,
+    )
+    for name in RELEASE_ASSETS:
+        print(f"  {asset_url(name)}", file=stream)
+    print(
+        "Download with: python scripts/evaluate_test.py --download "
+        "<asset-name>",
+        file=stream,
+    )
+    print(
+        "or: gh release download v1.0-models "
+        f"--repo {RELEASE_REPO} --pattern '<asset-name>'",
+        file=stream,
+    )
+
+
+def download_asset(name: str, dest: Path) -> bool:
+    """Fetch one v1.0-models asset into dest. Returns True when the file matches."""
+    expected = RELEASE_ASSETS[name]
+    url = asset_url(name)
+    if dest.is_file() and dest.stat().st_size == expected:
+        print(f"Using {dest} ({expected} bytes) from {url}")
+        return True
+
+    print(f"Downloading {url}")
+    gh = shutil.which("gh")
+    if gh is None:
+        print("gh is not installed, so the asset was not downloaded.", file=sys.stderr)
+        print_release_help(sys.stderr)
+        return False
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    completed = subprocess.run(
+        [
+            gh,
+            "release",
+            "download",
+            RELEASE_TAG,
+            "--repo",
+            RELEASE_REPO,
+            "--pattern",
+            name,
+            "--dir",
+            str(dest.parent),
+            "--clobber",
+        ],
+        check=False,
+    )
+    if completed.returncode != 0 or not dest.is_file():
+        print(
+            f"gh release download failed for {url} (exit {completed.returncode}).",
+            file=sys.stderr,
+        )
+        print_release_help(sys.stderr)
+        return False
+    actual = dest.stat().st_size
+    if actual != expected:
+        print(
+            f"Downloaded {dest} is {actual} bytes; expected {expected} for {url}.",
+            file=sys.stderr,
+        )
+        return False
+    print(f"Downloaded {dest} ({actual} bytes)")
+    return True
 
 
 def list_images(folder: Path) -> list[Path]:
@@ -90,15 +189,25 @@ def load_images(paths: list[Path], image_size: int):
 
 def main() -> int:
     args = parse_args()
+    if args.download and args.model is not None:
+        print("Pass either --download or --model, not both.", file=sys.stderr)
+        return 2
+    if args.download is None and args.model is None:
+        print("Pass --download NAME or --model PATH.", file=sys.stderr)
+        print_release_help(sys.stderr)
+        return 2
 
-    if not args.model.is_file():
-        print(f"Model file not found: {args.model}", file=sys.stderr)
-        print(
-            "Download one of these files from the GitHub Release and pass it with --model:",
-            file=sys.stderr,
-        )
-        for name in RELEASE_NAMES:
-            print(f"  {name}", file=sys.stderr)
+    if args.download:
+        model_path = Path("models") / args.download
+        if not download_asset(args.download, model_path):
+            print("data/test metrics remain TBD until that file is scored.", file=sys.stderr)
+            return 2
+    else:
+        model_path = args.model
+
+    if not model_path.is_file():
+        print(f"Model file not found: {model_path}", file=sys.stderr)
+        print_release_help(sys.stderr)
         print("data/test metrics remain TBD until that file is scored.", file=sys.stderr)
         return 2
 
@@ -130,7 +239,7 @@ def main() -> int:
         print(exc, file=sys.stderr)
         return 1
 
-    model = tf.keras.models.load_model(args.model)
+    model = tf.keras.models.load_model(model_path)
 
     paths: list[Path] = []
     labels: list[str] = []
@@ -148,7 +257,7 @@ def main() -> int:
     probabilities = np.concatenate(probabilities, axis=0)
     predicted = np.where(probabilities < args.threshold, "O", "R")
 
-    print(f"Model: {args.model}")
+    print(f"Model: {model_path}")
     print(
         "Images: "
         f"{total} (O={len(images_by_class['O'])}, R={len(images_by_class['R'])})"
@@ -185,7 +294,7 @@ def main() -> int:
     axis.set_yticks([0, 1], labels=list(CLASS_NAMES))
     axis.set_xlabel("Predicted")
     axis.set_ylabel("True")
-    axis.set_title(args.model.name)
+    axis.set_title(model_path.name)
     for row in range(matrix.shape[0]):
         for column in range(matrix.shape[1]):
             axis.text(column, row, str(int(matrix[row, column])), ha="center", va="center")

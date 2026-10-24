@@ -2,7 +2,7 @@
 
 IBM Skills Network coursework project. The model is a VGG16 transfer-learning classifier that labels a waste image as organic (`O`) or recyclable (`R`).
 
-This repository is the coursework project itself. It is not a production sorting system.
+> **Context.** Coursework for **Deep Learning with Keras and Tensorflow** at IBM Skills Network, cleaned up and consolidated for portfolio use.
 
 ## Overview
 
@@ -23,14 +23,26 @@ The notebook downloads the reduced Waste Classification Dataset (1200 images) in
 
 ## Models
 
-Do not commit model files. The notebook writes these checkpoints, and both belong on a GitHub Release:
+Do not commit model files. The notebook writes these checkpoints. Both are assets on the [`v1.0-models`](https://github.com/dgluchowski/waste-image-classifier/releases/tag/v1.0-models) release, and that release is the only place to get them:
 
-- `O_R_tlearn_vgg16.keras` — feature-extraction stage
-- `O_R_tlearn_fine_tune_vgg16.keras` — fine-tuning stage
+| File | Bytes | Stage |
+| --- | --- | --- |
+| `O_R_tlearn_vgg16.keras` | 112455527 | Feature extraction |
+| `O_R_tlearn_fine_tune_vgg16.keras` | 104061755 | Fine-tuning |
 
-The Release is not attached yet. The two files are about 104 MB and 112 MB. Which filename is which size is not recorded in the notebook.
+Download URLs:
 
-Release URL: TBD
+- https://github.com/dgluchowski/waste-image-classifier/releases/download/v1.0-models/O_R_tlearn_vgg16.keras
+- https://github.com/dgluchowski/waste-image-classifier/releases/download/v1.0-models/O_R_tlearn_fine_tune_vgg16.keras
+
+The repository is private, so those URLs need a GitHub session. `gh release download` uses your login:
+
+```bash
+gh release download v1.0-models --repo dgluchowski/waste-image-classifier --pattern 'O_R_tlearn_vgg16.keras'
+gh release download v1.0-models --repo dgluchowski/waste-image-classifier --pattern 'O_R_tlearn_fine_tune_vgg16.keras'
+```
+
+`scripts/evaluate_test.py --download` runs that same `gh release download` for one of the two asset names and then scores the file.
 
 ## Test images
 
@@ -63,11 +75,13 @@ Train and evaluate inside the notebook (this downloads the dataset and writes `.
 jupyter notebook notebooks/waste_classifier_vgg16.ipynb
 ```
 
-Score a model from the Release on `data/test` after the images and the checkpoint are on disk:
+Score a `v1.0-models` checkpoint on `data/test`. `--download` fetches that asset into `models/` (`*.keras` is gitignored) and scores it. `--model` scores a file already downloaded from the same release:
 
 ```bash
-python scripts/evaluate_test.py --model /path/to/O_R_tlearn_vgg16.keras
-python scripts/evaluate_test.py --model /path/to/O_R_tlearn_fine_tune_vgg16.keras
+python scripts/evaluate_test.py --download O_R_tlearn_vgg16.keras
+python scripts/evaluate_test.py --download O_R_tlearn_fine_tune_vgg16.keras
+python scripts/evaluate_test.py --model models/O_R_tlearn_vgg16.keras
+python scripts/evaluate_test.py --model models/O_R_tlearn_fine_tune_vgg16.keras
 ```
 
 The script prints a classification report and writes `outputs/confusion_matrix.csv` and `outputs/confusion_matrix.png`. `outputs/` is gitignored. If the model file or the test images are missing, the script stops and does not invent scores.
@@ -111,4 +125,4 @@ Not run. `scripts/evaluate_test.py` has no model file and no images in this repo
 
 ## Status
 
-The notebook run and the methodology report are imported. A GitHub Release for the two checkpoints, images under `data/test/O` and `data/test/R`, and a confusion matrix from `scripts/evaluate_test.py` are still required before the TBD cells above can be replaced.
+The notebook run, the methodology report, and the `v1.0-models` release are in place. Images under `data/test/O` and `data/test/R`, and a confusion matrix from `scripts/evaluate_test.py`, are still required before the TBD cells above can be replaced.
