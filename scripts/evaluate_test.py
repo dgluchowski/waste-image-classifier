@@ -119,10 +119,10 @@ def download_asset(name: str, dest: Path) -> bool:
     expected = RELEASE_ASSETS[name]
     url = asset_url(name)
     if dest.is_file() and dest.stat().st_size == expected:
-        print(f"Using {dest} ({expected} bytes) from {url}")
+        print(f"Using {dest} ({expected} bytes) from {url}", flush=True)
         return True
 
-    print(f"Downloading {url}")
+    print(f"Downloading {url}", flush=True)
     gh = shutil.which("gh")
     if gh is None:
         print("gh is not installed, so the asset was not downloaded.", file=sys.stderr)
@@ -160,7 +160,7 @@ def download_asset(name: str, dest: Path) -> bool:
             file=sys.stderr,
         )
         return False
-    print(f"Downloaded {dest} ({actual} bytes)")
+    print(f"Downloaded {dest} ({actual} bytes)", flush=True)
     return True
 
 
