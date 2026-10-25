@@ -88,7 +88,7 @@ The script prints a classification report and writes `outputs/confusion_matrix.c
 
 ## Results
 
-Numbers below are copied from notebook outputs. They are not a rerun on `data/test`. Cells that a resume table still needs are `TBD`.
+The validation table and the notebook test subset are copied from notebook outputs. The `data/test` table is a separate run of `scripts/evaluate_test.py` on all 200 images in that folder.
 
 Validation logs use `steps_per_epoch=5`. Execution count 11 prints `len(train_generator)` as 25, and execution counts 7–8 print 800 training images and 200 validation images at batch size 32. Each epoch therefore trains on 160 of 800 images and scores 192 validation images (`200 // 32`). The validation generator also shuffles.
 
@@ -116,13 +116,15 @@ Macro and weighted averages in that output match the accuracy for each model (0.
 
 ### Released model on `data/test`
 
-Not run. `scripts/evaluate_test.py` has no model file and no images in this repository.
+`scripts/evaluate_test.py --download` scored both `v1.0-models` checkpoints on every image in `data/test` (100 organic, 100 recyclable). Those images are not in git. Figures below are the script's classification report at `digits=4`. Confusion-matrix rows are true labels and columns are predictions, in order O, R.
 
-| Model | Accuracy | Precision | Recall | F1 | Confusion matrix |
-| --- | --- | --- | --- | --- | --- |
-| `O_R_tlearn_vgg16.keras` on `data/test` | TBD | TBD | TBD | TBD | TBD |
-| `O_R_tlearn_fine_tune_vgg16.keras` on `data/test` | TBD | TBD | TBD | TBD | TBD |
+| Model | Accuracy | O precision | O recall | O f1 | R precision | R recall | R f1 | Support | Confusion matrix |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `O_R_tlearn_vgg16.keras` | 0.8400 | 0.8400 | 0.8400 | 0.8400 | 0.8400 | 0.8400 | 0.8400 | 100 + 100 | [[84, 16], [16, 84]] |
+| `O_R_tlearn_fine_tune_vgg16.keras` | 0.8500 | 0.8646 | 0.8300 | 0.8469 | 0.8365 | 0.8700 | 0.8529 | 100 + 100 | [[83, 17], [13, 87]] |
+
+For `O_R_tlearn_vgg16.keras`, macro and weighted averages are precision 0.8400, recall 0.8400, and f1 0.8400. For `O_R_tlearn_fine_tune_vgg16.keras`, both averages are precision 0.8506, recall 0.8500, and f1 0.8499.
 
 ## Status
 
-The notebook run, the methodology report, and the `v1.0-models` release are in place. Images under `data/test/O` and `data/test/R`, and a confusion matrix from `scripts/evaluate_test.py`, are still required before the TBD cells above can be replaced.
+The notebook run, the methodology report, the `v1.0-models` release, and the `data/test` scores from `scripts/evaluate_test.py` are in place. The 200 test images are not committed.
