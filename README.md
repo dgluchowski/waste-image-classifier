@@ -35,7 +35,7 @@ Download URLs:
 - https://github.com/dgluchowski/waste-image-classifier/releases/download/v1.0-models/O_R_tlearn_vgg16.keras
 - https://github.com/dgluchowski/waste-image-classifier/releases/download/v1.0-models/O_R_tlearn_fine_tune_vgg16.keras
 
-The repository is private, so those URLs need a GitHub session. `gh release download` uses your login:
+Those release URLs are public. You can download in the browser, with `curl -L`, or with `gh`:
 
 ```bash
 gh release download v1.0-models --repo dgluchowski/waste-image-classifier --pattern 'O_R_tlearn_vgg16.keras'
