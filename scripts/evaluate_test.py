@@ -18,11 +18,10 @@ Or fetch it yourself, then pass the local path:
     gh release download v1.0-models --repo dgluchowski/waste-image-classifier --pattern 'O_R_tlearn_vgg16.keras'
     python scripts/evaluate_test.py --model O_R_tlearn_vgg16.keras
 
-Preprocessing matches the notebook evaluation cell (execution count 29 in
-notebooks/waste_classifier_vgg16.ipynb): resize to 150x150, scale pixels to
-[0, 1], and threshold the sigmoid output at 0.5. A probability below 0.5 is
+Preprocessing matches the training evaluation: resize to 150x150, scale pixels
+to [0, 1], and threshold the sigmoid output at 0.5. A probability below 0.5 is
 organic (O). Otherwise the prediction is recyclable (R), which is class 1 in
-the notebook encoding.
+the training label encoding.
 
 This script prints a classification report and writes a confusion matrix.
 It does not fill in metrics when the model file or the test images are missing.

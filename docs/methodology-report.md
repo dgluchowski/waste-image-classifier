@@ -2,7 +2,7 @@
 
 ## 1. Project Goal
 
-The project develops an automated image classification system. The system separates recyclable waste from organic waste. It uses transfer learning with a pre-trained VGG16 network. The goal is to improve the efficiency of waste sorting at EcoClean and to reduce contamination of recyclable materials.
+The project develops an automated image classification system. The system separates recyclable waste from organic waste. It uses transfer learning with a pre-trained VGG16 network.
 
 ## 2. Dataset
 

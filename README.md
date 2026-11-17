@@ -1,29 +1,26 @@
 # Waste Image Classifier
 
-IBM Skills Network coursework project. The model is a VGG16 transfer-learning classifier that labels a waste image as organic (`O`) or recyclable (`R`).
-
-> **Context.** Coursework for **Deep Learning with Keras and Tensorflow** at IBM Skills Network, cleaned up and consolidated for portfolio use.
+VGG16 transfer-learning classifier that labels a waste image as organic (`O`) or recyclable (`R`). This started as coursework for Deep Learning with Keras and Tensorflow at IBM Skills Network.
 
 ## Overview
 
-The notebook loads ImageNet VGG16 with the original classification head removed, freezes the base, and trains a small binary head (two 512-unit ReLU layers, dropout 0.3, one sigmoid unit). A second run unfreezes `block5_conv3` and trains a new head with RMSprop. Both runs save a Keras checkpoint. The written methodology is in [`docs/methodology-report.md`](docs/methodology-report.md). The executed notebook is [`notebooks/waste_classifier_vgg16.ipynb`](notebooks/waste_classifier_vgg16.ipynb).
+ImageNet VGG16 is loaded with the original classification head removed. The base is frozen, and a small binary head is trained (two 512-unit ReLU layers, dropout 0.3, one sigmoid unit). A second run unfreezes `block5_conv3` and trains a new head with RMSprop. Both runs save a Keras checkpoint. The written methodology is in [`docs/methodology-report.md`](docs/methodology-report.md).
 
-The notebook downloads the reduced Waste Classification Dataset (1200 images) into `o-vs-r-split/` on the machine where it runs. That download, the extracted images, and the `.keras` checkpoints are gitignored.
+The training run used the reduced Waste Classification Dataset (1200 images) in `o-vs-r-split/`. That download, the extracted images, and the `.keras` checkpoints are gitignored. `scripts/evaluate_test.py` scores a released checkpoint. See [How to run](#how-to-run): the scripts do not reproduce training.
 
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
-| `notebooks/waste_classifier_vgg16.ipynb` | Executed coursework notebook |
 | `docs/methodology-report.md` | Methodology write-up |
 | `scripts/evaluate_test.py` | Scores a released `.keras` model on `data/test` |
-| `requirements.txt` | Packages named by the notebook install cell |
+| `requirements.txt` | Packages from the training environment |
 | `data/test/O/` | Organic test images. Not committed. |
 | `data/test/R/` | Recyclable test images. Not committed. |
 
 ## Models
 
-Do not commit model files. The notebook writes these checkpoints. Both are assets on the [`v1.0-models`](https://github.com/dgluchowski/waste-image-classifier/releases/tag/v1.0-models) release, and that release is the only place to get them:
+Do not commit model files. The training run wrote these checkpoints. Both are assets on the [`v1.0-models`](https://github.com/dgluchowski/waste-image-classifier/releases/tag/v1.0-models) release, and that release is the only place to get them:
 
 | File | Bytes | Stage |
 | --- | --- | --- |
@@ -53,11 +50,11 @@ data/test/O/    organic
 data/test/R/    recyclable
 ```
 
-`data/` is gitignored. The notebook itself does not read `data/test`. Its evaluation cell reads `o-vs-r-split/test/O` and `o-vs-r-split/test/R`, and it keeps only the first 50 paths returned by `glob` for each class.
+`data/` is gitignored. `scripts/evaluate_test.py` reads every image in `data/test/O` and `data/test/R`. The 0.77 and 0.79 scores below are a different subset: the first 50 paths in `o-vs-r-split/test/O` and the first 50 in `o-vs-r-split/test/R`.
 
 ## Setup
 
-The executed notebook kernel is Python 3.11.3 (`language_info.version` in the notebook metadata). The version cell (execution count 3) prints TensorFlow `2.17.0`.
+The `v1.0-models` checkpoints were produced with Python 3.11.3 and TensorFlow 2.17.0.
 
 ```bash
 python -m venv .venv
@@ -65,15 +62,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-`tensorflow`, `scikit-learn`, and `matplotlib` are pinned to the versions in the notebook install cell. `numpy`, `requests`, `tqdm`, and `Pillow` are not pinned there.
+`tensorflow`, `scikit-learn`, and `matplotlib` are pinned to the versions from that training environment. `numpy`, `requests`, `tqdm`, and `Pillow` are not pinned.
 
 ## How to run
 
-Train and evaluate inside the notebook (this downloads the dataset and writes `.keras` files in the working directory):
-
-```bash
-jupyter notebook notebooks/waste_classifier_vgg16.ipynb
-```
+`scripts/` does not reproduce training. The only script scores a checkpoint that already exists. The trained files are the `v1.0-models` release assets listed above.
 
 Score a `v1.0-models` checkpoint on `data/test`. `--download` fetches that asset into `models/` (`*.keras` is gitignored) and scores it. `--model` scores a file already downloaded from the same release:
 
@@ -88,31 +81,31 @@ The script prints a classification report and writes `outputs/confusion_matrix.c
 
 ## Results
 
-The validation table and the notebook test subset are copied from notebook outputs. The `data/test` table is a separate run of `scripts/evaluate_test.py` on all 200 images in that folder.
+The validation table and the 100-image test subset below were recorded from the training run that produced the `v1.0-models` checkpoints. Those logs are not in this repository. The `data/test` table is a separate run of `scripts/evaluate_test.py` on all 200 images in that folder.
 
-Validation logs use `steps_per_epoch=5`. Execution count 11 prints `len(train_generator)` as 25, and execution counts 7–8 print 800 training images and 200 validation images at batch size 32. Each epoch therefore trains on 160 of 800 images and scores 192 validation images (`200 // 32`). The validation generator also shuffles.
+Validation logs use `steps_per_epoch=5`. That run had 25 training batches, 800 training images, and 200 validation images at batch size 32. Each epoch therefore trains on 160 of 800 images and scores 192 validation images (`200 // 32`). The validation generator also shuffles.
 
 ### Validation, from the training logs
 
 | Stage | Checkpoint | Epoch | Accuracy | Val accuracy | Val loss | Where |
 | --- | --- | --- | --- | --- | --- | --- |
-| Feature extraction | `O_R_tlearn_vgg16.keras` | 10/10 | 0.8438 | 0.8177 | 0.3754 | `model.fit` cell, execution count 20. Lowest `val_loss` in that log. |
-| Fine-tuning | `O_R_tlearn_fine_tune_vgg16.keras` | 10/10 | 0.9062 | 0.9062 | 0.2629 | fine-tune `model.fit` cell, execution count 24. Highest `val_accuracy` and lowest `val_loss` in that log. |
+| Feature extraction | `O_R_tlearn_vgg16.keras` | 10/10 | 0.8438 | 0.8177 | 0.3754 | Feature-extraction run. Lowest `val_loss` in that run. |
+| Fine-tuning | `O_R_tlearn_fine_tune_vgg16.keras` | 10/10 | 0.9062 | 0.9062 | 0.2629 | Fine-tune run. Highest `val_accuracy` and lowest `val_loss` in that run. |
 
-Earlier fine-tune epochs in the same cell include validation accuracy 0.8750 (epoch 3), 0.8802 (epoch 7), and 0.8750 (epoch 8). The final logged validation accuracy is 0.9062.
+Earlier fine-tune epochs in that run include validation accuracy 0.8750 (epoch 3), 0.8802 (epoch 7), and 0.8750 (epoch 8). The final logged validation accuracy is 0.9062.
 
-Both stages log `learning_rate: 1.0000e-04` on epoch 1. A `LearningRateScheduler` is attached in both fits. The feature-extraction compile step sets Adam at `1e-5` (execution count 18), and the fine-tune compile step sets RMSprop at `1e-4` (execution count 24). The logged schedule starts at `1e-4` for both.
+Both stages log `learning_rate: 1.0000e-04` on epoch 1. A `LearningRateScheduler` is attached in both fits. The feature-extraction compile step sets Adam at `1e-5`, and the fine-tune compile step sets RMSprop at `1e-4`. The logged schedule starts at `1e-4` for both.
 
-### Notebook test subset, from the saved checkpoints
+### Training-run test subset
 
-Execution count 29 loads the two `.keras` files and calls `sklearn.metrics.classification_report` on 100 images: the first 50 `glob` matches in `o-vs-r-split/test/O` and the first 50 in `o-vs-r-split/test/R`.
+The saved checkpoints were scored on 100 images: the first 50 paths in `o-vs-r-split/test/O` and the first 50 in `o-vs-r-split/test/R`.
 
 | Model | Accuracy | O precision | O recall | O f1 | R precision | R recall | R f1 | Support |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | Extract Features Model | 0.77 | 0.75 | 0.80 | 0.78 | 0.79 | 0.74 | 0.76 | 50 + 50 |
 | Fine-Tuned Model | 0.79 | 0.78 | 0.80 | 0.79 | 0.80 | 0.78 | 0.79 | 50 + 50 |
 
-Macro and weighted averages in that output match the accuracy for each model (0.77 and 0.79). The notebook does not print a confusion matrix.
+Macro and weighted averages in that output match the accuracy for each model (0.77 and 0.79). That output is the classification report only.
 
 ### Released model on `data/test`
 
@@ -127,4 +120,14 @@ For `O_R_tlearn_vgg16.keras`, macro and weighted averages are precision 0.8400, 
 
 ## Status
 
-The notebook run, the methodology report, the `v1.0-models` release, and the `data/test` scores from `scripts/evaluate_test.py` are in place. The 200 test images are not committed.
+The methodology report, the `v1.0-models` release, and the `data/test` scores from `scripts/evaluate_test.py` are in place. The 200 test images are not committed.
+
+## License
+
+The code in `scripts/` and `docs/methodology-report.md` are MIT-licensed. See [LICENSE](LICENSE).
+
+Data: Waste Classification Data by Sashaank Sekar (Kaggle [`techsash/waste-classification-data`](https://www.kaggle.com/datasets/techsash/waste-classification-data)), CC BY-SA 4.0, not redistributed here.
+
+Model weights are fine-tuned from VGG16 (Simonyan & Zisserman, University of Oxford VGG, CC BY 4.0). The [`v1.0-models`](https://github.com/dgluchowski/waste-image-classifier/releases/tag/v1.0-models) release weights are provided for educational use; check the dataset terms before reuse.
+
+This project started as IBM Skills Network coursework. No IBM course materials are included in this repository.
